@@ -1,0 +1,254 @@
+#SÃO QUATRO SCRIPTS NO TOTAL: PLAYER (MOVIMENTO DO PERSONAGEM), PLATFORMSS (CRIAÇÃO DE PLATAFORMAS), OVER (RELACIONADO AO GAME OVER DO JOGO), E RADARES (RADARES DE PARADA DO JOGO).
+
+
+#PLAYER:
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class play : MonoBehaviour
+{
+    // Start is called before the first frame update
+
+    
+
+    private CharacterController controle;
+    public float score; 
+    public float speed;
+    public float hspeed; // velocidade horizontal.
+    public float jumpvelo;
+    public float gravidade;
+    private float vy;
+    private bool ismovingr;
+    private bool ismovingl;
+    private float constante = 0.015f;
+    private float radius = 1f;
+    public LayerMask layer;
+    private bool isdead = false;
+    
+
+    public Text scoring; 
+
+
+
+    void Start()
+    {
+        
+        controle = GetComponent<CharacterController>();
+        vy = 0;
+        ismovingr = false;
+        ismovingl = false;
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if(isdead == false)
+        {
+            score = score + 0.2f * 15f;
+            scoring.text = Mathf.Round(score).ToString();
+        }
+
+        
+            
+        
+
+        detetacolisao();
+
+        Vector3 direcao = new Vector3(0.0f, 0.0f, speed * Time.deltaTime);
+
+        if (controle.isGrounded)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                vy = jumpvelo;
+            }
+
+            if (Input.GetKeyDown(KeyCode.RightArrow) && transform.position.x < 3f && ismovingr == false)
+            {
+                ismovingr = true;
+                StartCoroutine(RightMove());
+
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow) && transform.position.x > -3f && ismovingl == false)
+            {
+                ismovingl = true;
+                StartCoroutine(LeftMove());
+            }
+            if(transform.position.x > -9f && transform.position.x < 9f)
+            {
+                if(transform.position.x == 0)
+                {
+                    speed = speed;
+                }
+                
+                    
+                
+            }
+        }
+        else
+        {
+            vy = vy - gravidade*Time.deltaTime;
+
+        }
+        direcao.y = direcao.y + vy*Time.deltaTime;
+
+        controle.Move(direcao);
+    }
+
+    IEnumerator LeftMove()
+    {
+        for(float i = 0; i < 10; i += 1f)
+        {
+            controle.Move(Vector3.left * constante * hspeed);
+            yield return null;
+        }
+        ismovingl = false;
+        
+    }
+
+    IEnumerator RightMove()
+    {
+        for (float i = 0; i < 10; i += 1f)
+        {
+            controle.Move(Vector3.right * constante * hspeed);
+            yield return null;
+        }
+        ismovingr = false;
+    }
+
+    void detetacolisao()
+    {
+        RaycastHit cr = new RaycastHit();
+
+        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out cr, radius, layer)) 
+        {
+            speed = 0;
+            hspeed = 0;
+            jumpvelo = 0;
+            over.gamo = true;
+            isdead = true;
+        }
+    }
+}
+
+#PLATFORMSS
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class platformss : MonoBehaviour
+{
+    public List<GameObject> plataforma = new List<GameObject>();
+    public List<Transform> plataformasatuais = new List<Transform>();
+
+    private float dist; 
+    private float off = 0;
+    private Transform jogador;
+    private Transform radaratual;
+    private int index = 0; 
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        GameObject[] jogad = GameObject.FindGameObjectsWithTag("Player");
+        jogador = jogad[0].transform;
+
+        for (int i = 0; i < 3; i++)
+        {
+            Transform p = Instantiate(plataforma[i], new Vector3(0, 0, i * 90), transform.rotation).transform;
+            plataformasatuais.Add(p); 
+
+            off = off + 90;
+        }
+        radaratual = plataformasatuais[index].GetComponent<radares>().radar;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        dist = jogador.position.z - radaratual.position.z;
+
+        if(dist > 5)
+        {
+            reciclar(plataformasatuais[index].gameObject);
+
+            index = index + 1;
+
+
+            if (index == 3)
+            {
+                index = 0;
+            }
+            radaratual = plataformasatuais[index].GetComponent<radares>().radar;
+        }
+    }
+
+    public void reciclar(GameObject plataformax)
+    {
+        plataformax.transform.position = new Vector3(0, 0, off);
+        off = off + 90;
+    }
+    
+}
+
+#OVER
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI; 
+
+public class over : MonoBehaviour
+{
+    public static bool gamo;
+    public GameObject gameOver;
+
+    public GameObject moda;
+    public GameObject modb;
+    private bool troca;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        gamo = false;
+        troca = false;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.W))
+        {
+            Debug.Log($"{moda.activeSelf}");
+            troca =! troca;
+            moda.SetActive(troca);
+            modb.SetActive(!troca);
+        }
+
+        
+
+            if (gamo)
+        {
+            gameOver.SetActive(true);
+        }
+    }
+    }
+    
+    #RADARES
+    
+    using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class radares : MonoBehaviour
+{
+    public Transform radar;
+    
+}
